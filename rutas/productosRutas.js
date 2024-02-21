@@ -1,36 +1,71 @@
-var ruta=require("express").Router();
-var {autorizado, admin}=require("../middlewares/funcionesPassword");
-const { mostrarProductos, nuevoProducto, productoBuscarPorID, modificarProducto, borrarProducto } = require("../bd/productosBD");
+var ruta = require("express").Router();
+var subirArchivo=require("../middlewares/subirArchivo");
+var { mostrarProductos, nuevoProducto, modificarProducto, buscarProductoPorID, borrarProducto } = require("../bd/productosBD");
+const fs = require('fs').promises;
 
-ruta.get("/productos",async(req,res)=>{
-    //console.log("Estas en productos");
+ruta.get("/productos", async (req, res) => {
     var productos = await mostrarProductos();
-    //console.log(productos);
-    res.render("productos/mostrarProductos",{productos});
+    res.render("productos/mostrar", { productos });
 });
 
-ruta.get("/nuevoproducto",admin,async(req,res)=>{
+ruta.get("/nuevoproducto", async (req, res) => {
     res.render("productos/nuevo");
 });
 
-ruta.post("/nuevoproducto",async(req,res)=>{
-    var error=await nuevoProducto(req.body);
+ruta.post("/nuevoproducto",subirArchivo(), async (req, res) => {
+    req.body.foto=req.file.originalname;
+    var error = await nuevoProducto(req.body);
     res.redirect("/productos");
 });
 
-ruta.get("/editarproducto/:id",async(req, res)=>{
-    var product=await productoBuscarPorID(req.params.id);
-    res.render("productos/modificar",{product});
+ruta.get("/editarProducto/:id", async (req, res) => {
+    var producto = await buscarProductoPorID(req.params.id);
+    res.render("productos/modificar", { producto });
 });
 
-ruta.post("/editarproducto", async(req,res)=>{
-    await modificarProducto(req.body);
+ruta.post("/editarProducto",subirArchivo(), async (req, res) => {
+  try {
+    const { id, borrar } = req.body;
+    const productoAnterior = await buscarProductoPorID(id);
+    const fotoAnterior = productoAnterior ? productoAnterior.foto : null;
+
+    if (req.file) {
+      if (fotoAnterior) {
+        await fs.unlink(`./web/images/${fotoAnterior}`);
+      }
+      req.body.foto = req.file.originalname;
+    }
+    var error = await modificarProducto(req.body);
+    if (borrar === "true") {
+   
+      if (fotoAnterior) {
+        await fs.unlink(`./web/images/${fotoAnterior}`);
+      }
+      await borrarProducto(id);
+    }
+
     res.redirect("/productos");
+  } catch (error) {
+    console.error('Error al editar la foto o producto:', error);
+    res.status(500).send("Error al editar la foto o producto");
+  }
 });
 
-ruta.get("/borrarproducto/:id", async(req,res)=>{
-    await borrarProducto(req.params.id);
-    res.redirect("/productos");
-});
+ruta.get("/borrarProducto/:id", async (req, res) => {
+    try {
+      const producto = await buscarProductoPorID(req.params.id);
+      if (!producto) {
+        return res.status(404).send("Producto no encontrado");
+      }
+      await fs.unlink(`./web/images/${producto.foto}`);
+      await borrarProducto(req.params.id);
+  
+      res.redirect("/");
+    } catch (error) {
+      console.error('Error al borrar la foto o producto:', error);
+      res.status(500).send("Error al borrar la foto o producto");
+    }
+  });
 
-module.exports=ruta;
+
+module.exports = ruta;

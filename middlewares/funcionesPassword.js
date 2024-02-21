@@ -10,13 +10,11 @@ function encriptarPassword(password){
 }
 
 function validarPassword(password, hash, salt){
-    var hashEvaluar=crypto.scryptSync(password,salt,100000, 64, 'sha512').toString('hex');
-    return hashEvaluar == hash
+    var hashEvaluar=crypto.scryptSync(password, salt, 100000, 64, 'sha512').toString('hex');
+    return hashEvaluar === hash 
 }
 
-function autorizado(req,res,cb){
-    console.log("mostrar usuarios");
-    console.log(req.session.admin);
+/*function autorizado(req,res,cb){
     if(req.session.usuario || req.session.admin){
         cb();
     }
@@ -29,19 +27,19 @@ function admin(req,res,cb){
     if(req.session.admin){
         cb();
     }
-    else{
-        if(req.session.usuario){
-            res.redirect("/mostrarUsuarios");
-        }
-        else{
-            res.redirect("/")
-        }
+else{
+    if(req.session.usuario){
+        res.redirect("/mostrar")
     }
-}
+
+    else{
+        res.redirect("/");
+     }
+     
+  }
+}*/
 
 module.exports={
     encriptarPassword,
-    validarPassword,
-    autorizado,
-    admin
+    validarPassword
 }

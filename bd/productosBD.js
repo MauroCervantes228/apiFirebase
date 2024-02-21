@@ -1,82 +1,131 @@
 var conexion=require("./conexion").conexionProductos;
 var Producto=require("../modelos/Producto");
+
 async function mostrarProductos(){
     var products=[];
     try{
+       
         var productos=await conexion.get();
         productos.forEach(producto => {
             var product=new Producto(producto.id, producto.data());
-            if (product.bandera==0){
-                products.push(product.obtenerDatos);
+            if (product.bandera === 0){
+                products.push(product.obtenerDatosP());
+              
             }
-        });        
+            
+        });  
+
     }
+
     catch(err){
-        console.log("Error al recuperar productos de la BD "+err);
+        console.log("Error al recuperar usuarios de la base de datos"+err);
+
     }
+
     return products;
+ 
 }
 
-async function productoBuscarPorID(id){
+async function buscarProductoPorID(id){
     var product;
-    try{
+
+    try {
         var producto=await conexion.doc(id).get();
         var productoObjeto=new Producto(producto.id, producto.data());
-        if (productoObjeto.bandera==0){
-            product=productoObjeto.obtenerDatos;
+        if (productoObjeto.bandera === 0){
+            product=productoObjeto.obtenerDatosP();
+            console.log(product);
         }
+
     }
+
     catch(err){
-        console.log("Error al recuperar al producto "+err);
+        console.log("Error al recuperar al producto" + err);
+        
     }
+
     return product;
+
 }
 
 async function nuevoProducto(datos){
-    var product=new Producto(null,datos);
+    var product=new Producto(null, datos);
+    console.log(product);
     var error=1;
-    if (product.bandera==0){
-        try{
-            await conexion.doc().set(product.obtenerDatos);
-            console.log("Producto insertado a la BD");
-            error=0;
-        }
-        catch(err){
-            console.log("Error al capturar el nuevo producto "+err);
-        }
+    if (product.bandera === 0){
+    try{
+        console.log(product.obtenerDatosP());
+        await conexion.doc().set(product.obtenerDatosP());
+        console.log("Producto insertado a la BD");
+        error=0;
     }
-    return error;
+
+    catch(err){
+        console.log("Error al capturar el nuevo producto"+err);
+
+    }
+
+  }
+  return error;
+
 }
 
 async function modificarProducto(datos){
-    var product=new Producto(datos.id,datos);
     var error=1;
-    if (product.bandera==0){
+    var respuestaBuscarProducto=await buscarProductoPorID(datos.id);
+    console.log(respuestaBuscarProducto);
+    if(respuestaBuscarProducto!=undefined){
+        if (datos.foto=="algo"){
+            datos.foto=respuestaBuscarProducto.foto;
+        }
+
+    var product=new Producto(datos.id,datos)
+
+
+    if (product.bandera === 0){
         try{
-            await conexion.doc(product.id).set(product.obtenerDatos);
-            console.log("Producto actualizado ");
+            await conexion.doc(product.id).set(product.obtenerDatosP());
+            console.log("Producto actualizado");
             error=0;
+
         }
         catch(err){
-            console.log("Error al modificar al producto "+err);
+            console.log("Error al modificar el producto"+err);
+
         }
     }
+
+}
     return error;
+
 }
 
 async function borrarProducto(id){
+    var error=1;
+    var product=await buscarProductoPorID(id);
+    if(product!=undefined){
     try{
+       
         await conexion.doc(id).delete();
-        console.log("Producto borrado ");
+        console.log("Producto borrado");
+        error=0;
+
     }
+
     catch(err){
-        console.log("Error al borrar al producto "+err);
+        console.log("Error al borrar el producto" + err);
+
     }
+
+}
+
+return error;
+
 }
 
 module.exports={
     mostrarProductos,
-    productoBuscarPorID,
+    buscarProductoPorID,
     nuevoProducto,
     modificarProducto,
     borrarProducto

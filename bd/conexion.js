@@ -5,8 +5,8 @@ admin.initializeApp({
     credential:admin.credential.cert(keys)
 });
 var bd=admin.firestore();
-var conexionUsuarios=bd.collection("usuarioss");
-var conexionProductos=bd.collection("productos");
+var conexionUsuarios=bd.collection("usuariosBD");
+var conexionProductos=bd.collection("productosBD");
 
 module.exports={
     conexionUsuarios,
